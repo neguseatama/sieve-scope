@@ -25,7 +25,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Text Processing :: Linguistic"
 ]
-dependencies = []
+dependencies = [
+    "sieve-core-engine>=1.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/neguseatama/sieve-scope"
