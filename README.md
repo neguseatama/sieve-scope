@@ -6,9 +6,10 @@
 > A fully local, zero-dependency, deterministic (100% reproducible) code plagiarism and structural similarity detection engine.
 > Extends [Sieve-Core](https://github.com/neguseatama/sieve-core)'s deterministic similarity engine and [Sieve-Referee](https://github.com/neguseatama/sieve-referee)'s multi-hypothesis LUT judgment philosophy to the **source code domain**.
 
+[![PyPI Version](https://img.shields.io/pypi/v/sieve-scope.svg)](https://pypi.org/project/sieve-scope/)
+[![Python Version](https://img.shields.io/pypi/pyversions/sieve-scope.svg)](https://pypi.org/project/sieve-scope/)
 [![CI](https://github.com/neguseatama/sieve-scope/actions/workflows/test.yml/badge.svg)](https://github.com/neguseatama/sieve-scope/actions/workflows/test.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
