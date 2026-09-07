@@ -6,9 +6,10 @@
 > 完全ローカル実行・外部依存ゼロ・決定論的（100%再現可能）なコード盗用・構造類似検証エンジンです。  
 > [Sieve-Core](https://github.com/neguseatama/sieve-core) の決定論的類似度エンジンと、[Sieve-Referee](https://github.com/neguseatama/sieve-referee) の多軸仮説・LUT判定思想を、**ソースコードドメイン**へ拡張したプロジェクトです。
 
+[![PyPI Version](https://img.shields.io/pypi/v/sieve-scope.svg)](https://pypi.org/project/sieve-scope/)
+[![Python Version](https://img.shields.io/pypi/pyversions/sieve-scope.svg)](https://pypi.org/project/sieve-scope/)
 [![CI](https://github.com/neguseatama/sieve-scope/actions/workflows/test.yml/badge.svg)](https://github.com/neguseatama/sieve-scope/actions/workflows/test.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
