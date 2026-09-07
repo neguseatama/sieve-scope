@@ -1,0 +1,41 @@
+name: Sieve Scope v1.3 CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  test:
+    name: Run Test Suite (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Run Strict 24-Case Full Suite
+      run: |
+        python -m unittest discover -s tests -p "test_v1_3_full_suite.py" -v
+
+    - name: Run Component & Backward Compatibility Suite
+      run: |
+        python -m unittest discover -s tests -p "test_v1_3_regression.py" -v
+
+    - name: Run Edge Cases & Parallel Determinism Tests
+      run: |
+        python -m unittest discover -s tests -p "test_v1_3_edge_cases.py" -v
+
+    - name: Run Synthetic Threshold Validation
+      run: |
+        python tests/threshold_tuning.py

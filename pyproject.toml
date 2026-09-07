@@ -1,0 +1,42 @@
+
+---
+
+`pyproject.toml`
+
+```toml
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sieve-scope"
+version = "1.3.0"
+description = "Deterministic and Explainable Code Plagiarism Detection Engine with 7-bit Observation Space"
+readme = "README.md"
+authors = [
+    { name = "Kai IWASAKI" }
+]
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Linguistic"
+]
+requires-python = ">=3.9"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/neguseatama/sieve-scope"
+Repository = "https://github.com/neguseatama/sieve-scope.git"
+"Bug Tracker" = "https://github.com/neguseatama/sieve-scope/issues"
+
+[tool.setuptools]
+py-modules = ["sieve_scope"]
