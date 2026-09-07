@@ -39,4 +39,9 @@ Repository = "https://github.com/neguseatama/sieve-scope.git"
 "Bug Tracker" = "https://github.com/neguseatama/sieve-scope/issues"
 
 [tool.setuptools]
+py-modules = ["sieve_scope"]Homepage = "https://github.com/neguseatama/sieve-scope"
+Repository = "https://github.com/neguseatama/sieve-scope.git"
+"Bug Tracker" = "https://github.com/neguseatama/sieve-scope/issues"
+
+[tool.setuptools]
 py-modules = ["sieve_scope"]
