@@ -6,6 +6,7 @@ Sieve Scope Engine v1.3 (Production Ready)
 - Weighted Bi-gram Dice Coefficient
 - Parallel Pair Evaluation
 - Indirect Chain Detection
+- File-level skip visibility & sequential fallback (v1.3.1)
 """
 
 import ast
@@ -16,6 +17,7 @@ import keyword
 import tokenize
 from collections import Counter, defaultdict, deque
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures.process import BrokenProcessPool
 from typing import Any, Dict, List, Set, Tuple, Optional
 
 # v0完全互換の除外識別子集合
@@ -102,6 +104,7 @@ class SieveScopeEngineV1_3:
                 "v0_mask": "0000",
                 "mask": "0000-000",
                 "short_circuited": True,
+                "scores": None,  # 観測なし（解析不能）: 既存キーの形を保ったまま null を載せる
             }
 
         # H2: AST Skeleton（全ノード型の列を比較）
@@ -201,6 +204,43 @@ def _pair_worker_func(args):
     return (key1, key2), result
 
 
+def _classify_corpus_files(corpus: Dict[str, str]):
+    """v1.3.1: ファイル事前分類（比較に入れるか・skipped に載せるか）。
+
+    - 空本体（空ファイル・コメントのみ）→ 'not_applicable'。比較から外す
+      （空の __init__.py 同士の偽クローン防止）。
+    - 構文エラーなど parse 失敗 → 'parse_failed'。既存のペア結果を保つため
+      比較には残す（追加キーは追加のみ）。
+    - 骨格・位置タプル構築で RecursionError → 'parse_failed'。比較から外す
+      （コーパス全体の停止を防止・sys.setrecursionlimit は変更しない）。
+
+    戻り値: (usable, skipped, compared_parse_failed)
+    """
+    usable: Dict[str, str] = {}
+    skipped: List[Dict[str, str]] = []
+    compared_parse_failed: Set[str] = set()
+    for key in sorted(corpus.keys()):
+        code = corpus[key]
+        try:
+            tree = ast.parse(code)
+        except Exception:
+            skipped.append({"path": key, "reason": "parse_failed"})
+            compared_parse_failed.add(key)
+            continue
+        if not tree.body:
+            skipped.append({"path": key, "reason": "not_applicable"})
+            continue
+        try:
+            visitor = ASTSkeletonVisitor()
+            visitor.visit(tree)
+            build_pos_tuple(tree)
+        except RecursionError:
+            skipped.append({"path": key, "reason": "parse_failed"})
+            continue
+        usable[key] = code
+    return usable, skipped, compared_parse_failed
+
+
 class SieveClusterAnalyzerV1_3:
     """クラスタ解析・安全不変式・並列処理・間接伝搬警告エンジン"""
 
@@ -209,12 +249,14 @@ class SieveClusterAnalyzerV1_3:
         self.min_cluster_size = min_cluster_size
 
     def analyze_corpus(self, corpus: Dict[str, str], max_workers: Optional[int] = None) -> Dict[str, Any]:
-        keys = sorted(list(corpus.keys()))
+        usable, skipped, compared_parse_failed = _classify_corpus_files(corpus)
+        # 比較対象: 解析可能ファイル + （既存の結果を保つために残す）構文エラーファイル
+        compare_keys = sorted(set(usable.keys()) | compared_parse_failed)
         pair_tasks = []
 
-        for i in range(len(keys)):
-            for j in range(i + 1, len(keys)):
-                k1, k2 = keys[i], keys[j]
+        for i in range(len(compare_keys)):
+            for j in range(i + 1, len(compare_keys)):
+                k1, k2 = compare_keys[i], compare_keys[j]
                 pair_tasks.append((
                     k1, corpus[k1], k2, corpus[k2],
                     self.engine.jaccard_threshold,
@@ -222,17 +264,41 @@ class SieveClusterAnalyzerV1_3:
                 ))
 
         raw_pair_results = {}
+        recursion_failed: Set[str] = set()
+        used_pool = False
 
         if len(pair_tasks) > 10 and max_workers != 1:
-            with ProcessPoolExecutor(max_workers=max_workers) as executor:
-                futures = [executor.submit(_pair_worker_func, task) for task in pair_tasks]
-                for future in as_completed(futures):
-                    pair_key, res = future.result()
-                    raw_pair_results[pair_key] = res
-        else:
+            try:
+                with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                    future_map = {executor.submit(_pair_worker_func, task): task for task in pair_tasks}
+                    for future in as_completed(future_map):
+                        task = future_map[future]
+                        try:
+                            pair_key, res = future.result()
+                        except RecursionError:
+                            recursion_failed.update((task[0], task[2]))
+                            continue
+                        raw_pair_results[pair_key] = res
+                used_pool = True
+            except (OSError, ImportError, PermissionError, BrokenProcessPool):
+                # 凍結アプリ等でプールが作れない・壊れたときは、同じ結果を返す
+                # 逐次処理へ退避する（結果は決定論のため並列とバイト一致）
+                raw_pair_results = {}
+                recursion_failed = set()
+        if not used_pool:
             for task in pair_tasks:
-                pair_key, res = _pair_worker_func(task)
+                try:
+                    pair_key, res = _pair_worker_func(task)
+                except RecursionError:
+                    recursion_failed.update((task[0], task[2]))
+                    continue
                 raw_pair_results[pair_key] = res
+
+        present = {entry["path"] for entry in skipped}
+        for key in sorted(recursion_failed):
+            if key not in present:
+                skipped.append({"path": key, "reason": "parse_failed"})
+        skipped.sort(key=lambda entry: entry["path"])
 
         # 決定論的順序の保証
         pair_results = dict(sorted(raw_pair_results.items()))
@@ -249,7 +315,7 @@ class SieveClusterAnalyzerV1_3:
         valid_clusters = []
         all_clusters = []
 
-        for node in keys:
+        for node in compare_keys:
             if node not in visited:
                 component = set()
                 queue = deque([node])
@@ -281,13 +347,14 @@ class SieveClusterAnalyzerV1_3:
                 res["mask"] = f"{res['v0_mask']}-{h['H5']}{h['H6']}{h['H7']}"
 
         # 間接伝搬チェーン警告の検出
-        warnings = self.detect_indirect_chains(keys, direct_adj, valid_clusters)
+        warnings = self.detect_indirect_chains(compare_keys, direct_adj, valid_clusters)
 
         return {
             "valid_clusters": [sorted(list(c)) for c in valid_clusters],
             "all_clusters": [sorted(list(c)) for c in all_clusters],
             "pair_results": pair_results,
             "warnings": warnings,
+            "skipped": skipped,
         }
 
     @staticmethod
