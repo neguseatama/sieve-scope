@@ -36,9 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   carries `scores: null` instead of omitting the key — `null` means "no
   observation" (the pair could not be parsed).
 - **Deeply nested code can no longer stop the whole corpus**: a file whose
-  skeleton/position-tuple build hits a `RecursionError` is contained per
-  file, listed under `skipped` (`parse_failed`), and the remaining files
-  are evaluated normally. `sys.setrecursionlimit` is never called.
+  parse or skeleton/position-tuple build hits a `RecursionError` is
+  contained per file, listed under `skipped` (`parse_failed`), and the
+  remaining files are evaluated normally — containment holds wherever the
+  overflow lands (the landing stage differs between interpreters).
+  `sys.setrecursionlimit` is never called.
 - **Parallel evaluation falls back to sequential**: when the
   `ProcessPoolExecutor` pool cannot be created or breaks (e.g. frozen
   apps), the analysis reruns sequentially and returns the byte-identical,

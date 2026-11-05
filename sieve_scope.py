@@ -212,8 +212,10 @@ def _classify_corpus_files(corpus: Dict[str, str]):
       （空の __init__.py 同士の偽クローン防止）。
     - 構文エラーなど parse 失敗 → 'parse_failed'。既存のペア結果を保つため
       比較には残す（追加キーは追加のみ）。
-    - 骨格・位置タプル構築で RecursionError → 'parse_failed'。比較から外す
-      （コーパス全体の停止を防止・sys.setrecursionlimit は変更しない）。
+    - parse 段階・骨格・位置タプル構築の RecursionError → 'parse_failed'。
+      比較から外す（あふれの着地点はインタプリタの版や環境で違うため、どこで
+      出ても同じ契約にする・v1.3.0 ではあふれは全体停止のみで観測結果が無い・
+      コーパス全体の停止を防止・sys.setrecursionlimit は変更しない）。
 
     戻り値: (usable, skipped, compared_parse_failed)
     """
@@ -224,6 +226,13 @@ def _classify_corpus_files(corpus: Dict[str, str]):
         code = corpus[key]
         try:
             tree = ast.parse(code)
+        except RecursionError:
+            # parse 段階のあふれ（fix1: 着地点は環境で違う実測）も骨格段階と
+            # 同じく比較から外す。v1.3.0 ではあふれは全体停止のみで観測結果が
+            # 無いため、既存結果の保護（比較に残す）は構文エラーなど通常の
+            # parse 失敗のみが対象。
+            skipped.append({"path": key, "reason": "parse_failed"})
+            continue
         except Exception:
             skipped.append({"path": key, "reason": "parse_failed"})
             compared_parse_failed.add(key)
