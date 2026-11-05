@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-11-06
+
+### Fixed
+- **H6 (g_CONST) no longer collides across value types**: constants are
+  compared as (type name, value) pairs, so `1` and `"1"` are distinguished
+  instead of folding into the same constant form. Results change only for
+  code that mixes constant types with identical string forms; the frozen
+  24-case suite is unaffected (measured: every mask unchanged). Shipped as
+  a separate minor version because results can change on such inputs, so
+  it can be adopted or dropped independently of 1.3.1.
+
+### Changed
+- **Version bumped to 1.4.0** (mask semantics change, deliberately
+  separated from the 1.3.1 patch lane).
+
 ## [1.3.1] - 2026-11-06
 
 ### Fixed

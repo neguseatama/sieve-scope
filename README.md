@@ -63,7 +63,7 @@ The evaluation function `f_v1.3(C1, C2)` projects a code pair into seven boolean
 | **H3** | Identifier Similarity | Jaccard + sequence similarity of identifiers | Score `> 0.50` |
 | **H4** | Cluster Safety | Direct similarity + membership in a valid cluster (size ≥3) | Invariant condition satisfied |
 | **H5** | g_POS | SHA-256 hash of recursive AST field representation | Exact hash match |
-| **H6** | g_CONST | Constants / literals set match | Sorted constant list exact match |
+| **H6** | g_CONST | Constants / literals set match | Sorted (type, value) constant list exact match — type-aware since v1.4.0, so `1` and `"1"` are distinguished |
 | **H7** | g_FREQ | Weighted identifier bi-gram Dice coefficient | Score `>= 0.60` |
 
 Mask notation is `v0_mask (4-bit) - extension (3-bit)`.
