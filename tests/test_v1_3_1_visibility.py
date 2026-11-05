@@ -124,6 +124,32 @@ class TestRecursionContainment(unittest.TestCase):
         self.assertNotIn("deep.py", pair_names)
         self.assertIn(("a.py", "b.py"), [tuple(k) for k in analysis["pair_results"]])
 
+    def test_sct06b_parse_stage_recursion_is_contained_too(self):
+        # fix1: RecursionError の着地点は環境で違う（3.12 では骨格構築段階、
+        # 一部の環境では ast.parse 自体が溢れる実測）。着地点がどこであっても
+        # あふれたファイルは比較から外れる契約を、parse を差し替えて模擬し
+        # どのインタプリタでも同じように固定する。
+        corpus = {"a.py": OK_CODE, "b.py": OK_CODE2, "c.py": OK_CODE3, "deep.py": DEEP_CODE}
+        real_parse = sieve_scope.ast.parse
+
+        def parse_that_overflows(source, *args, **kwargs):
+            if source == DEEP_CODE:
+                raise RecursionError("simulated: parse-stage overflow")
+            return real_parse(source, *args, **kwargs)
+
+        sieve_scope.ast.parse = parse_that_overflows
+        try:
+            limit_before = sys.getrecursionlimit()
+            analysis = _analyze(corpus)
+            self.assertEqual(sys.getrecursionlimit(), limit_before)
+        finally:
+            sieve_scope.ast.parse = real_parse
+        by_path = {e["path"]: e["reason"] for e in analysis["skipped"]}
+        self.assertEqual(by_path.get("deep.py"), "parse_failed")
+        pair_names = {name for pair in analysis["pair_results"] for name in pair}
+        self.assertNotIn("deep.py", pair_names)
+        self.assertIn(("a.py", "b.py"), [tuple(k) for k in analysis["pair_results"]])
+
 
 class TestParallelFallback(unittest.TestCase):
     """SC-T07: プールを作れない環境でも同じ結果を逐次で返す。"""
