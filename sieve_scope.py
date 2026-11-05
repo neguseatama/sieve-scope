@@ -76,12 +76,13 @@ class ASTSkeletonVisitor(ast.NodeVisitor):
 
 
 class ASTConstantVisitor(ast.NodeVisitor):
-    """H6: g_CONST 定数・リテラルの抽出"""
+    """H6: g_CONST 定数・リテラルの抽出（v1.4.0 から型名込みで区別）"""
     def __init__(self):
         self.constants = []
 
     def visit_Constant(self, node):
-        self.constants.append(str(node.value))
+        # 1 と "1" を衝突させない: (型名, 値) の組で比較する（依頼書 S-6）
+        self.constants.append((type(node.value).__name__, str(node.value)))
         self.generic_visit(node)
 
 
