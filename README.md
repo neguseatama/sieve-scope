@@ -45,6 +45,8 @@ By inheriting the hypothesis mask (H1–H7) and LUT from Sieve-Referee, it fully
   H4 is promoted to 1 only when the cluster size is at least 3 **and** there is direct similarity evidence (H2∨H3). Indirect "telephone game" chains are never mixed into direct judgments.
 - **Short-Circuit Optimization**  
   Pairs with no structural or vocabulary similarity (H2=0 ∧ H3=0) are immediately returned as `1000-000`, skipping expensive hash computations.
+- **Skip Visibility & Robustness (v1.3.1)**  
+  Empty or statement-less files are excluded from comparison and listed under the result's `skipped` key (`not_applicable`), files that fail to parse are listed with `parse_failed`, and an unparseable pair carries `scores: null` ("no observation") instead of omitting the key. A file whose analysis hits a `RecursionError` is contained per file — the rest of the corpus is still evaluated — and when the process pool is unavailable (e.g. frozen apps) the analysis falls back to byte-identical sequential evaluation.
 - **Zero Dependencies & Deterministic**  
   Implemented using only the Python standard library. No external packages, no API costs, no probabilistic elements.
 
